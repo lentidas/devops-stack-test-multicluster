@@ -11,6 +11,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5"
     }
+    exoscale = {
+      source  = "exoscale/exoscale"
+      version = "~> 0.47"
+    }
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "~> 2"
@@ -26,6 +30,8 @@ terraform {
   }
 }
 
+### AWS provider configurations
+
 # Default AWS provider (configured through the standard AWS environment variables in the secrets.yml).
 provider "aws" {}
 
@@ -37,6 +43,27 @@ provider "aws" {
   secret_key = var.control_plane_aws_iam_secret_key
 }
 
+provider "aws" {
+  alias = "worker_1"
+
+  endpoints {
+    s3 = "https://sos-${local.worker_1.zone}.exo.io" # TODO Change this local here
+  }
+
+  region = local.worker_1.zone
+
+  access_key = var.exoscale_iam_access_key
+  secret_key = var.exoscale_iam_secret_key
+
+  # Skip validations specific to AWS in order to use this provider for Exoscale services
+  skip_credentials_validation = true
+  skip_requesting_account_id  = true
+  skip_metadata_api_check     = true
+  skip_region_validation      = true
+}
+
+### Kubernetes provider configurations
+
 provider "kubernetes" {
   alias = "control_plane"
 
@@ -44,6 +71,8 @@ provider "kubernetes" {
   cluster_ca_certificate = module.control_plane.kubernetes_cluster_ca_certificate
   token                  = module.control_plane.kubernetes_token
 }
+
+### Helm provider configurations
 
 provider "helm" {
   alias = "control_plane"
@@ -54,6 +83,8 @@ provider "helm" {
     token                  = module.control_plane.kubernetes_token
   }
 }
+
+### Argo CD provider configuration
 
 # No need to set an alias for the Argo CD provider, because there is only:
 # One Argo CD to rule them all,

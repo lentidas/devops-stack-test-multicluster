@@ -4,7 +4,7 @@ module "vpc" {
   source               = "terraform-aws-modules/vpc/aws"
   version              = "~> 5.0"
   name                 = module.eks.cluster_name
-  cidr                 = local.vpc_cidr
+  cidr                 = var.vpc_cidr
   azs                  = data.aws_availability_zones.available.names
   private_subnets      = local.private_subnets
   public_subnets       = local.public_subnets
@@ -28,9 +28,9 @@ module "eks" {
   source = "git::https://github.com/camptocamp/devops-stack-module-cluster-eks?ref=eks-nodegroups-attachment"
   # source = "../../devops-stack-module-cluster-eks"
 
-  cluster_name       = local.cluster_name
-  kubernetes_version = local.cluster_version
-  base_domain        = local.base_domain
+  cluster_name       = var.cluster_name
+  kubernetes_version = var.kubernetes_version
+  base_domain        = var.base_domain
 
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnets
@@ -40,10 +40,11 @@ module "eks" {
 
   node_groups = {
     "${module.eks.cluster_name}-main" = {
-      instance_types = ["m5a.xlarge"]
-      min_size       = 3
-      max_size       = 3
-      desired_size   = 3
+      instance_types  = ["m5a.xlarge"]
+      min_size        = 3
+      max_size        = 3
+      desired_size    = 3
+      nlbs_attachment = true
       block_device_mappings = {
         "default" = {
           device_name = "/dev/xvda"
@@ -76,7 +77,7 @@ module "traefik" {
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
 
   app_autosync           = local.app_autosync
-  enable_service_monitor = local.enable_service_monitor
+  enable_service_monitor = var.enable_service_monitor
 
   dependency_ids = {
     argocd = module.argocd_bootstrap.id
@@ -92,7 +93,7 @@ module "cert-manager" {
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
 
   app_autosync           = local.app_autosync
-  enable_service_monitor = local.enable_service_monitor
+  enable_service_monitor = var.enable_service_monitor
 
   cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
 
@@ -119,6 +120,7 @@ module "loki-stack" {
 
   dependency_ids = {
     argocd = module.argocd_bootstrap.id
+    ebs    = module.ebs.id
   }
 }
 
@@ -128,7 +130,7 @@ module "thanos" {
 
   cluster_name     = module.eks.cluster_name
   base_domain      = module.eks.base_domain
-  cluster_issuer   = local.cluster_issuer
+  cluster_issuer   = var.cluster_issuer
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
 
   app_autosync = local.app_autosync
@@ -144,6 +146,7 @@ module "thanos" {
 
   dependency_ids = {
     argocd       = module.argocd_bootstrap.id
+    ebs          = module.ebs.id
     traefik      = module.traefik.id
     cert-manager = module.cert-manager.id
   }
@@ -156,7 +159,7 @@ module "kube-prometheus-stack" {
   cluster_name     = module.eks.cluster_name
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
   base_domain      = module.eks.base_domain
-  cluster_issuer   = local.cluster_issuer
+  cluster_issuer   = var.cluster_issuer
 
   app_autosync = local.app_autosync
 
@@ -180,6 +183,7 @@ module "kube-prometheus-stack" {
 
   dependency_ids = {
     argocd       = module.argocd_bootstrap.id
+    ebs          = module.ebs.id
     traefik      = module.traefik.id
     cert-manager = module.cert-manager.id
     thanos       = module.thanos.id
@@ -195,7 +199,7 @@ module "argocd" {
 
   cluster_name   = module.eks.cluster_name
   base_domain    = module.eks.base_domain
-  cluster_issuer = local.cluster_issuer
+  cluster_issuer = var.cluster_issuer
 
   accounts_pipeline_tokens = module.argocd_bootstrap.argocd_accounts_pipeline_tokens
   server_secretkey         = module.argocd_bootstrap.argocd_server_secretkey

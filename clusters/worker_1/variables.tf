@@ -1,4 +1,3 @@
-
 variable "kubernetes_version" {
   type = string
 }
@@ -7,8 +6,22 @@ variable "cluster_name" {
   type = string
 }
 
+variable "zone" {
+  type = string
+}
+
+variable "service_level" {
+  type    = string
+  default = "starter"
+}
+
 variable "base_domain" {
   type = string
+}
+
+variable "activate_wildcard_record" {
+  type    = bool
+  default = true
 }
 
 variable "cluster_issuer" {
@@ -26,18 +39,7 @@ variable "enable_app_autosync" {
   default = true
 }
 
-variable "vpc_cidr" {
-  type = string
-}
-
-variable "oidc" {
-  type = object({
-    issuer_url              = string
-    oauth_url               = string
-    token_url               = string
-    api_url                 = string
-    client_id               = string
-    client_secret           = string
-    oauth2_proxy_extra_args = list(string)
-  })
+variable "argocd_namespace" {
+  type    = string
+  default = "argocd"
 }

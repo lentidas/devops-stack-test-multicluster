@@ -14,7 +14,7 @@ module "iam_assumable_role_thanos" {
   version                    = "~> 5.0"
   create_role                = true
   number_of_role_policy_arns = 1
-  role_name_prefix           = format("thanos-s3-%s-", local.cluster_name)
+  role_name_prefix           = format("thanos-s3-%s-", var.cluster_name)
   provider_url               = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
   role_policy_arns           = [resource.aws_iam_policy.thanos_s3_policy.arn]
 

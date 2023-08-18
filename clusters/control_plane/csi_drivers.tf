@@ -37,7 +37,7 @@ resource "aws_efs_mount_target" "eks" {
 module "efs" {
   source = "git::https://github.com/camptocamp/devops-stack-module-efs-csi-driver.git?ref=v2.1.0"
 
-  cluster_name     = local.cluster_name
+  cluster_name     = var.cluster_name
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
   app_autosync     = local.app_autosync
 
@@ -51,11 +51,9 @@ module "efs" {
 }
 
 module "ebs" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-ebs-csi-driver.git?ref=v2.1.0"
+  source = "git::https://github.com/camptocamp/devops-stack-module-ebs-csi-driver.git?ref=v2.2.0"
 
-  target_revision = "chart-autoupdate-minor-ebs-csi-driver"
-
-  cluster_name     = local.cluster_name
+  cluster_name     = var.cluster_name
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
   app_autosync     = local.app_autosync
 
