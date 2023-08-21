@@ -60,14 +60,14 @@ module "eks" {
 }
 
 module "argocd_bootstrap" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-argocd.git//bootstrap?ref=chart-autoupdate-minor-argocd"
+  source = "git::https://github.com/camptocamp/devops-stack-module-argocd.git//bootstrap?ref=3.2.0"
   # source = "../../devops-stack-module-argocd/bootstrap"
 
   depends_on = [module.eks]
 }
 
 module "traefik" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-traefik.git//eks?ref=v2.0.1"
+  source = "git::https://github.com/camptocamp/devops-stack-module-traefik.git//eks?ref=v3.0.0"
   # source = "../../devops-stack-module-traefik/eks"
 
   target_revision = "chart-autoupdate-major-traefik"

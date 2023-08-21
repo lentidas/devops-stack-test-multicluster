@@ -1,4 +1,3 @@
-
 variable "kubernetes_version" {
   type = string
 }

@@ -9,28 +9,46 @@ module "sks" {
   service_level = var.service_level
 
   nodepools = {
-    "${local.cluster_name}-default" = {
+    "${var.cluster_name}-default" = {
       size            = 3
       instance_type   = "standard.large"
-      description     = "Default node pool for ${local.cluster_name}."
+      description     = "Default node pool for ${var.cluster_name}."
       instance_prefix = "default"
     },
   }
 }
 
-# module "cert-manager" {
-#   source = "git::https://github.com/camptocamp/devops-stack-module-cert-manager.git//sks?ref=v5.1.0"
-#   # source = "../../devops-stack-module-cert-manager/sks"
+module "traefik" {
+  # source = "git::https://github.com/camptocamp/devops-stack-module-traefik.git//sks?ref=v2.0.1"
+  source = "../../../../devops-stack-module-traefik/sks"
 
-#   argocd_namespace = var.argocd_namespace
+  cluster_name        = module.sks.cluster_name
+  base_domain         = module.sks.base_domain
+  argocd_namespace    = var.argocd_namespace
+  destination_cluster = module.sks.cluster_name
 
-#   app_autosync           = local.app_autosync
-#   enable_service_monitor = local.enable_service_monitor
+  nlb_id                  = module.sks.nlb_id
+  router_nodepool_id      = module.sks.router_nodepool_id
+  router_instance_pool_id = module.sks.router_instance_pool_id
 
-#   dependency_ids = {
-#     argocd = module.argocd_bootstrap.id
-#   }
-# }
+  app_autosync           = local.app_autosync
+  enable_service_monitor = var.enable_service_monitor
+
+  dependency_ids = {}
+}
+
+module "cert-manager" {
+  # source = "git::https://github.com/camptocamp/devops-stack-module-cert-manager.git//sks?ref=v5.1.0"
+  source = "../../../../devops-stack-module-cert-manager/sks"
+
+  argocd_namespace    = var.argocd_namespace
+  destination_cluster = "gh-worker-1"
+
+  app_autosync           = local.app_autosync
+  enable_service_monitor = var.enable_service_monitor
+
+  dependency_ids = {}
+}
 
 # module "longhorn" {
 #   source = "git::https://github.com/camptocamp/devops-stack-module-longhorn.git?ref=v2.1.1"
@@ -42,7 +60,7 @@ module "sks" {
 #   argocd_namespace = var.argocd_namespace
 
 #   app_autosync           = local.app_autosync
-#   enable_service_monitor = local.enable_service_monitor
+#   enable_service_monitor = var.enable_service_monitor
 
 #   enable_dashboard_ingress = true
 #   oidc                     = module.oidc.oidc
@@ -57,7 +75,6 @@ module "sks" {
 #   }
 
 #   dependency_ids = {
-#     argocd       = module.argocd_bootstrap.id
 #     traefik      = module.traefik.id
 #     cert-manager = module.cert-manager.id
 #   }
@@ -82,7 +99,6 @@ module "sks" {
 #   }
 
 #   dependency_ids = {
-#     argocd   = module.argocd_bootstrap.id
 #     longhorn = module.longhorn.id
 #   }
 # }
@@ -109,7 +125,6 @@ module "sks" {
 #   }
 
 #   dependency_ids = {
-#     argocd       = module.argocd_bootstrap.id
 #     traefik      = module.traefik.id
 #     cert-manager = module.cert-manager.id
 #     longhorn     = module.longhorn.id

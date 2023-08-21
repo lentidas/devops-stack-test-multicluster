@@ -8,7 +8,7 @@ locals {
 resource "aws_s3_bucket" "this" {
   for_each = toset(local.s3_buckets)
 
-  bucket        = "${local.cluster_name}-${each.key}"
+  bucket        = "${var.cluster_name}-${each.key}"
   force_destroy = true
 
   lifecycle {
@@ -22,8 +22,8 @@ resource "aws_s3_bucket" "this" {
 resource "exoscale_iam_access_key" "s3_iam_key" {
   for_each = toset(local.s3_buckets)
 
-  name      = "${local.cluster_name}-${each.key}-s3-iam-key"
-  resources = ["sos/bucket:${local.cluster_name}-${each.key}"]
+  name      = "${var.cluster_name}-${each.key}-s3-iam-key"
+  resources = ["sos/bucket:${var.cluster_name}-${each.key}"]
 
   # Probably not all these permissions are needed. However, these IAM keys are resource-scoped, so there should be no 
   # issue. The only SOS permissions commented out are the ones related to the creation and deletion of an SOS bucket.

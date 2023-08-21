@@ -13,7 +13,7 @@ terraform {
     }
     exoscale = {
       source  = "exoscale/exoscale"
-      version = "~> 0.47"
+      version = "~> 0.51"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -47,13 +47,13 @@ provider "aws" {
   alias = "worker_1"
 
   endpoints {
-    s3 = "https://sos-${local.worker_1.zone}.exo.io" # TODO Change this local here
+    s3 = "https://sos-${local.worker_1.zone}.exo.io"
   }
 
   region = local.worker_1.zone
 
-  access_key = var.exoscale_iam_access_key
-  secret_key = var.exoscale_iam_secret_key
+  access_key = var.worker_1_exoscale_iam_access_key
+  secret_key = var.worker_1_exoscale_iam_secret_key
 
   # Skip validations specific to AWS in order to use this provider for Exoscale services
   skip_credentials_validation = true
@@ -62,14 +62,31 @@ provider "aws" {
   skip_region_validation      = true
 }
 
-### Kubernetes provider configurations
+### Exoscale provider configurations
 
+provider "exoscale" {
+  alias = "worker_1"
+
+  key    = var.worker_1_exoscale_iam_access_key
+  secret = var.worker_1_exoscale_iam_secret_key
+}
+
+### Kubernetes provider configurations
 provider "kubernetes" {
   alias = "control_plane"
 
   host                   = module.control_plane.kubernetes_host
   cluster_ca_certificate = module.control_plane.kubernetes_cluster_ca_certificate
   token                  = module.control_plane.kubernetes_token
+}
+
+provider "kubernetes" {
+  alias = "worker_1"
+
+  host                   = module.worker_1.kubernetes_host
+  client_certificate     = module.worker_1.kubernetes_client_certificate
+  client_key             = module.worker_1.kubernetes_client_key
+  cluster_ca_certificate = module.worker_1.kubernetes_cluster_ca_certificate
 }
 
 ### Helm provider configurations
@@ -81,6 +98,17 @@ provider "helm" {
     host                   = module.control_plane.kubernetes_host
     cluster_ca_certificate = module.control_plane.kubernetes_cluster_ca_certificate
     token                  = module.control_plane.kubernetes_token
+  }
+}
+
+provider "helm" {
+  alias = "worker_1"
+
+  kubernetes {
+    host                   = module.worker_1.kubernetes_host
+    client_certificate     = module.worker_1.kubernetes_client_certificate
+    client_key             = module.worker_1.kubernetes_client_key
+    cluster_ca_certificate = module.worker_1.kubernetes_cluster_ca_certificate
   }
 }
 
