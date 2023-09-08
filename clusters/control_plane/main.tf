@@ -59,7 +59,7 @@ module "eks" {
 }
 
 module "argocd_bootstrap" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-argocd.git//bootstrap?ref=3.3.0"
+  source = "git::https://github.com/camptocamp/devops-stack-module-argocd.git//bootstrap?ref=v3.3.0"
   # source = "../../devops-stack-module-argocd/bootstrap"
 
   depends_on = [module.eks]
@@ -84,7 +84,7 @@ module "traefik" {
 }
 
 module "cert-manager" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-cert-manager.git//eks?ref=v5.1.0"
+  source = "git::https://github.com/camptocamp/devops-stack-module-cert-manager.git//eks?ref=v5.2.0"
   # source = "../../devops-stack-module-cert-manager/eks"
 
   cluster_name     = module.eks.cluster_name

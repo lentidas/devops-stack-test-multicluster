@@ -10,7 +10,7 @@ locals {
   }
 
   worker_1 = {
-    kubernetes_version       = "1.27.4"
+    kubernetes_version       = "1.28.1"
     cluster_name             = "gh-worker-1"
     zone                     = "ch-gva-2"
     service_level            = "starter"
