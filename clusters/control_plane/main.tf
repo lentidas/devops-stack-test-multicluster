@@ -24,8 +24,7 @@ module "vpc" {
 }
 
 module "eks" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-cluster-eks?ref=v2.0.2"
-  source = "git::https://github.com/camptocamp/devops-stack-module-cluster-eks?ref=eks-nodegroups-attachment"
+  source = "git::https://github.com/camptocamp/devops-stack-module-cluster-eks?ref=v3.0.0"
   # source = "../../devops-stack-module-cluster-eks"
 
   cluster_name       = var.cluster_name
@@ -60,7 +59,7 @@ module "eks" {
 }
 
 module "argocd_bootstrap" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-argocd.git//bootstrap?ref=3.2.0"
+  source = "git::https://github.com/camptocamp/devops-stack-module-argocd.git//bootstrap?ref=3.3.0"
   # source = "../../devops-stack-module-argocd/bootstrap"
 
   depends_on = [module.eks]
@@ -125,7 +124,7 @@ module "loki-stack" {
 }
 
 module "thanos" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-thanos.git//eks?ref=v2.1.0"
+  source = "git::https://github.com/camptocamp/devops-stack-module-thanos.git//eks?ref=v2.2.0"
   # source          = "../../devops-stack-module-thanos/eks"
 
   cluster_name     = module.eks.cluster_name
@@ -153,7 +152,7 @@ module "thanos" {
 }
 
 module "kube-prometheus-stack" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-kube-prometheus-stack.git//eks?ref=v6.1.1"
+  source = "git::https://github.com/camptocamp/devops-stack-module-kube-prometheus-stack.git//eks?ref=v6.3.0"
   # source = "../../devops-stack-module-kube-prometheus-stack/eks"
 
   cluster_name     = module.eks.cluster_name
@@ -192,10 +191,10 @@ module "kube-prometheus-stack" {
 }
 
 module "argocd" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-argocd.git?ref=chart-autoupdate-minor-argocd"
+  source = "git::https://github.com/camptocamp/devops-stack-module-argocd.git?ref=v3.3.0"
   # source = "../../devops-stack-module-argocd"
 
-  target_revision = "chart-autoupdate-minor-argocd"
+  # target_revision = "chart-autoupdate-minor-argocd"
 
   cluster_name   = module.eks.cluster_name
   base_domain    = module.eks.base_domain
@@ -250,7 +249,7 @@ module "metrics_server" {
 
   source_repo            = "https://github.com/kubernetes-sigs/metrics-server.git"
   source_repo_path       = "charts/metrics-server"
-  source_target_revision = "metrics-server-helm-chart-3.10.0"
+  source_target_revision = "metrics-server-helm-chart-3.11.0"
   destination_namespace  = "kube-system"
 
   dependency_ids = {
