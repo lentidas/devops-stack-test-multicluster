@@ -5,8 +5,8 @@ output "devops_stack_admins" {
 
 output "ingress_domains" {
   description = "List containing the domain to use for accessing the applications on each cluster."
-  value = [
-    format("%s.%s", local.control_plane.cluster_name, local.control_plane.base_domain),
-    format("%s.%s", local.worker_1.cluster_name, local.worker_1.base_domain),
-  ]
+  value = concat(
+    [format("%s.%s", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain)],
+    [for item in local.clusters.workers : format("%s.%s", item.cluster_name, item.base_domain)]
+  )
 }

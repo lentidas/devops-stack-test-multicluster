@@ -8,18 +8,17 @@ locals {
     }
   }
 
-  worker_clusters = [
-    {
-      cluster_name = "test1"
-      base_domain  = "example.com"
-    },
-    {
-      cluster_name = "test2"
-      base_domain  = "example.com"
-    },
+  control_plane_callback_urls = [
+    format("https://argocd.apps.%s.%s/auth/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
+    format("https://grafana.apps.%s.%s/login/generic_oauth", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
+    format("https://prometheus.apps.%s.%s/oauth2/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
+    format("https://thanos-query.apps.%s.%s/oauth2/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
+    format("https://thanos-bucketweb.apps.%s.%s/oauth2/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
+    format("https://alertmanager.apps.%s.%s/oauth2/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
   ]
 
-  worker_callback_urls = flatten([for item in local.worker_clusters : [
+  # TODO Maybe add Thanos callback URLs here?
+  worker_callback_urls = flatten([for item in local.clusters.workers : [
     format("https://longhorn.apps.%s.%s/oauth2/callback", item.cluster_name, item.base_domain),
     format("https://grafana.apps.%s.%s/login/generic_oauth", item.cluster_name, item.base_domain),
     format("https://prometheus.apps.%s.%s/oauth2/callback", item.cluster_name, item.base_domain),
@@ -27,16 +26,7 @@ locals {
     ]
   ])
 
-  control_plane_callback_urls = [
-    format("https://argocd.apps.%s.%s/auth/callback", local.control_plane.cluster_name, local.control_plane.base_domain),
-    format("https://grafana.apps.%s.%s/login/generic_oauth", local.control_plane.cluster_name, local.control_plane.base_domain),
-    format("https://prometheus.apps.%s.%s/oauth2/callback", local.control_plane.cluster_name, local.control_plane.base_domain),
-    format("https://thanos-query.apps.%s.%s/oauth2/callback", local.control_plane.cluster_name, local.control_plane.base_domain),
-    format("https://thanos-bucketweb.apps.%s.%s/oauth2/callback", local.control_plane.cluster_name, local.control_plane.base_domain),
-    format("https://alertmanager.apps.%s.%s/oauth2/callback", local.control_plane.cluster_name, local.control_plane.base_domain),
-  ]
-
-  callback_urls = concat(local.worker_callback_urls, local.control_plane_callback_urls)
+  callback_urls = concat(local.control_plane_callback_urls, local.worker_callback_urls)
 
   oidc_config = {
     issuer_url              = format("https://cognito-idp.%s.amazonaws.com/%s", data.aws_region.cognito_pool_region.name, resource.aws_cognito_user_pool.devops_stack_user_pool.id)
@@ -50,7 +40,7 @@ locals {
 }
 
 resource "aws_cognito_user_pool" "devops_stack_user_pool" {
-  name = "${local.control_plane.cluster_name}-pool"
+  name = "${local.clusters.control_plane.cluster_name}-pool"
 
   admin_create_user_config {
     allow_admin_create_user_only = true
@@ -58,14 +48,14 @@ resource "aws_cognito_user_pool" "devops_stack_user_pool" {
 }
 
 resource "aws_cognito_user_pool_domain" "devops_stack_user_pool_domain" {
-  domain       = local.control_plane.cluster_name
+  domain       = local.clusters.control_plane.cluster_name
   user_pool_id = resource.aws_cognito_user_pool.devops_stack_user_pool.id
 }
 
 resource "aws_cognito_user_group" "devops_stack_admin_group" {
   name         = "devops-stack-admins"
   user_pool_id = resource.aws_cognito_user_pool.devops_stack_user_pool.id
-  description  = "Users with administrator access to the applications on all the clusters controlled by ${local.control_plane.cluster_name}."
+  description  = "Users with administrator access to the applications on all the clusters controlled by ${local.clusters.control_plane.cluster_name}."
 }
 
 resource "aws_cognito_user" "devops_stack_users" {
@@ -93,7 +83,7 @@ resource "aws_cognito_user_in_group" "devops_stack_users" {
 }
 
 resource "aws_cognito_user_pool_client" "client" {
-  name = format("client-%s", local.control_plane.cluster_name)
+  name = format("client-%s", local.clusters.control_plane.cluster_name)
 
   user_pool_id = resource.aws_cognito_user_pool.devops_stack_user_pool.id
 

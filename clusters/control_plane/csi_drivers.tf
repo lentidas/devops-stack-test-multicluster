@@ -35,11 +35,14 @@ resource "aws_efs_mount_target" "eks" {
 }
 
 module "efs" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-efs-csi-driver.git?ref=v2.1.0"
+  # source = "git::https://github.com/camptocamp/devops-stack-module-efs-csi-driver.git?ref=v2.1.0"
+  source = "../../../../devops-stack-module-efs-csi-driver"
 
   cluster_name     = var.cluster_name
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
-  app_autosync     = local.app_autosync
+  argocd_project   = module.eks.cluster_name
+
+  app_autosync = local.app_autosync
 
   efs_file_system_id      = resource.aws_efs_file_system.eks.id
   create_role             = true
@@ -51,11 +54,14 @@ module "efs" {
 }
 
 module "ebs" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-ebs-csi-driver.git?ref=v2.2.0"
+  # source = "git::https://github.com/camptocamp/devops-stack-module-ebs-csi-driver.git?ref=v2.2.0"
+  source = "../../../../devops-stack-module-ebs-csi-driver"
 
   cluster_name     = var.cluster_name
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
-  app_autosync     = local.app_autosync
+  argocd_project   = module.eks.cluster_name
+
+  app_autosync = local.app_autosync
 
   create_role             = true
   cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url

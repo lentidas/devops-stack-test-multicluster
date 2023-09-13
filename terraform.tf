@@ -47,10 +47,10 @@ provider "aws" {
   alias = "worker_1"
 
   endpoints {
-    s3 = "https://sos-${local.worker_1.zone}.exo.io"
+    s3 = "https://sos-${local.clusters.workers.worker_1.zone}.exo.io"
   }
 
-  region = local.worker_1.zone
+  region = local.clusters.workers.worker_1.zone
 
   access_key = var.worker_1_exoscale_iam_access_key
   secret_key = var.worker_1_exoscale_iam_secret_key

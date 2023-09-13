@@ -18,6 +18,28 @@ module "sks" {
   }
 }
 
+# TODO Right now the Argo CD is using the administrator cluster role. Consider creating a dedicated role for Argo CD.
+resource "argocd_cluster" "this" {
+  name   = module.sks.cluster_name
+  server = module.sks.kubernetes_host
+
+  config {
+    tls_client_config {
+      ca_data   = module.sks.kubernetes_cluster_ca_certificate
+      cert_data = module.sks.kubernetes_client_certificate
+      key_data  = module.sks.kubernetes_client_key
+      insecure  = false # This is the default value, but it is set here explicitly for clarity.
+    }
+  }
+  metadata {
+    labels = {
+      "cluster-type" = "worker",
+      "cloud"        = "exoscale",
+      "region"       = var.zone,
+    }
+  }
+}
+
 module "traefik" {
   # source = "git::https://github.com/camptocamp/devops-stack-module-traefik.git//sks?ref=v2.0.1"
   source = "../../../../devops-stack-module-traefik/sks"
@@ -25,6 +47,7 @@ module "traefik" {
   cluster_name        = module.sks.cluster_name
   base_domain         = module.sks.base_domain
   argocd_namespace    = var.argocd_namespace
+  argocd_project      = module.sks.cluster_name
   destination_cluster = module.sks.cluster_name
 
   nlb_id                  = module.sks.nlb_id
@@ -42,7 +65,8 @@ module "cert-manager" {
   source = "../../../../devops-stack-module-cert-manager/sks"
 
   argocd_namespace    = var.argocd_namespace
-  destination_cluster = "gh-worker-1"
+  argocd_project      = module.sks.cluster_name
+  destination_cluster = module.sks.cluster_name
 
   app_autosync           = local.app_autosync
   enable_service_monitor = var.enable_service_monitor
@@ -50,84 +74,88 @@ module "cert-manager" {
   dependency_ids = {}
 }
 
-# module "longhorn" {
-#   source = "git::https://github.com/camptocamp/devops-stack-module-longhorn.git?ref=v2.1.1"
-#   # source = "../../devops-stack-module-longhorn"
+module "longhorn" {
+  # source = "git::https://github.com/camptocamp/devops-stack-module-longhorn.git?ref=v2.1.1"
+  source = "../../../../devops-stack-module-longhorn"
 
-#   cluster_name     = module.sks.cluster_name
-#   base_domain      = module.sks.base_domain
-#   cluster_issuer   = var.cluster_issuer
-#   argocd_namespace = var.argocd_namespace
+  cluster_name        = module.sks.cluster_name
+  base_domain         = module.sks.base_domain
+  cluster_issuer      = var.cluster_issuer
+  argocd_namespace    = var.argocd_namespace
+  argocd_project      = module.sks.cluster_name
+  destination_cluster = module.sks.cluster_name
 
-#   app_autosync           = local.app_autosync
-#   enable_service_monitor = var.enable_service_monitor
+  app_autosync           = local.app_autosync
+  enable_service_monitor = var.enable_service_monitor
 
-#   enable_dashboard_ingress = true
-#   oidc                     = module.oidc.oidc
+  enable_dashboard_ingress = true
+  oidc                     = var.oidc
 
-#   enable_pv_backups = true
-#   backup_storage = {
-#     bucket_name = resource.aws_s3_bucket.this["longhorn"].id
-#     region      = resource.aws_s3_bucket.this["longhorn"].region
-#     endpoint    = "sos-${resource.aws_s3_bucket.this["longhorn"].region}.exo.io"
-#     access_key  = resource.exoscale_iam_access_key.s3_iam_key["longhorn"].key
-#     secret_key  = resource.exoscale_iam_access_key.s3_iam_key["longhorn"].secret
-#   }
+  enable_pv_backups = true
+  backup_storage = {
+    bucket_name = resource.aws_s3_bucket.this["longhorn"].id
+    region      = resource.aws_s3_bucket.this["longhorn"].region
+    endpoint    = "sos-${resource.aws_s3_bucket.this["longhorn"].region}.exo.io"
+    access_key  = resource.exoscale_iam_access_key.s3_iam_key["longhorn"].key
+    secret_key  = resource.exoscale_iam_access_key.s3_iam_key["longhorn"].secret
+  }
 
-#   dependency_ids = {
-#     traefik      = module.traefik.id
-#     cert-manager = module.cert-manager.id
-#   }
-# }
+  dependency_ids = {
+    traefik      = module.traefik.id
+    cert-manager = module.cert-manager.id
+  }
+}
 
-# module "loki-stack" {
-#   source = "git::https://github.com/camptocamp/devops-stack-module-loki-stack//sks?ref=v4.0.2"
-#   # source = "../../devops-stack-module-loki-stack/sks"
+module "loki-stack" {
+  # source = "git::https://github.com/camptocamp/devops-stack-module-loki-stack.git//sks?ref=v4.0.2"
+  source = "../../../../devops-stack-module-loki-stack/sks"
 
-#   cluster_id       = module.sks.cluster_id
-#   argocd_namespace = var.argocd_namespace
+  cluster_id          = module.sks.cluster_id
+  argocd_namespace    = var.argocd_namespace
+  argocd_project      = module.sks.cluster_name
+  destination_cluster = module.sks.cluster_name
 
-#   app_autosync = local.app_autosync
+  app_autosync = local.app_autosync
 
-#   distributed_mode = true
+  logs_storage = {
+    bucket_name = resource.aws_s3_bucket.this["loki"].id
+    region      = resource.aws_s3_bucket.this["loki"].region
+    access_key  = resource.exoscale_iam_access_key.s3_iam_key["loki"].key
+    secret_key  = resource.exoscale_iam_access_key.s3_iam_key["loki"].secret
+  }
 
-#   logs_storage = {
-#     bucket_name = resource.aws_s3_bucket.this["loki"].id
-#     region      = resource.aws_s3_bucket.this["loki"].region
-#     access_key  = resource.exoscale_iam_access_key.s3_iam_key["loki"].key
-#     secret_key  = resource.exoscale_iam_access_key.s3_iam_key["loki"].secret
-#   }
+  dependency_ids = {
+    longhorn = module.longhorn.id
+  }
+}
 
-#   dependency_ids = {
-#     longhorn = module.longhorn.id
-#   }
-# }
+module "kube-prometheus-stack" {
+  # source = "git::https://github.com/camptocamp/devops-stack-module-kube-prometheus-stack.git//sks?ref=v6.1.1"
+  source = "../../../../devops-stack-module-kube-prometheus-stack/sks"
 
-# module "kube-prometheus-stack" {
-#   source = "git::https://github.com/camptocamp/devops-stack-module-kube-prometheus-stack//sks?ref=v6.1.1"
-#   # source = "../../devops-stack-module-kube-prometheus-stack/sks"
+  cluster_name        = module.sks.cluster_name
+  base_domain         = module.sks.base_domain
+  cluster_issuer      = var.cluster_issuer
+  argocd_namespace    = var.argocd_namespace
+  argocd_project      = module.sks.cluster_name
+  destination_cluster = module.sks.cluster_name
 
-#   cluster_name     = module.sks.cluster_name
-#   base_domain      = module.sks.base_domain
-#   cluster_issuer   = var.cluster_issuer
-#   argocd_namespace = var.argocd_namespace
+  app_autosync = local.app_autosync
 
-#   app_autosync = local.app_autosync
+  prometheus = {
+    oidc = var.oidc
+  }
+  alertmanager = {
+    oidc = var.oidc
+  }
+  grafana = {
+    oidc = var.oidc
+  }
 
-#   prometheus = {
-#     oidc = module.oidc.oidc
-#   }
-#   alertmanager = {
-#     oidc = module.oidc.oidc
-#   }
-#   grafana = {
-#     oidc = module.oidc.oidc
-#   }
-
-#   dependency_ids = {
-#     traefik      = module.traefik.id
-#     cert-manager = module.cert-manager.id
-#     longhorn     = module.longhorn.id
-#     loki-stack   = module.loki-stack.id
-#   }
-# }
+  dependency_ids = {
+    traefik      = module.traefik.id
+    cert-manager = module.cert-manager.id
+    longhorn     = module.longhorn.id
+    loki-stack   = module.loki-stack.id
+  }
+}
