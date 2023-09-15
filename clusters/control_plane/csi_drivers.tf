@@ -40,7 +40,7 @@ module "efs" {
 
   cluster_name     = var.cluster_name
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
-  argocd_project   = module.eks.cluster_name
+  argocd_project   = var.argocd_project
 
   app_autosync = local.app_autosync
 
@@ -59,7 +59,7 @@ module "ebs" {
 
   cluster_name     = var.cluster_name
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
-  argocd_project   = module.eks.cluster_name
+  argocd_project   = var.argocd_project
 
   app_autosync = local.app_autosync
 

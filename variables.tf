@@ -21,3 +21,15 @@ variable "worker_1_exoscale_iam_secret_key" {
   type        = string
   sensitive   = true
 }
+
+variable "worker_2_exoscale_iam_access_key" {
+  description = "Exoscale IAM key to use for the worker 2 cluster."
+  type        = string
+  sensitive   = true
+}
+
+variable "worker_2_exoscale_iam_secret_key" {
+  description = "Exoscale IAM secret key to use for the worker 2 cluster."
+  type        = string
+  sensitive   = true
+}

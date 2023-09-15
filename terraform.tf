@@ -33,6 +33,7 @@ terraform {
 ### AWS provider configurations
 
 # Default AWS provider (configured through the standard AWS environment variables in the secrets.yml).
+# Used mainly for the S3 bucket where the Terraform state is stored.
 provider "aws" {}
 
 provider "aws" {
@@ -62,6 +63,25 @@ provider "aws" {
   skip_region_validation      = true
 }
 
+provider "aws" {
+  alias = "worker_2"
+
+  endpoints {
+    s3 = "https://sos-${local.clusters.workers.worker_2.zone}.exo.io"
+  }
+
+  region = local.clusters.workers.worker_2.zone
+
+  access_key = var.worker_2_exoscale_iam_access_key
+  secret_key = var.worker_2_exoscale_iam_secret_key
+
+  # Skip validations specific to AWS in order to use this provider for Exoscale services
+  skip_credentials_validation = true
+  skip_requesting_account_id  = true
+  skip_metadata_api_check     = true
+  skip_region_validation      = true
+}
+
 ### Exoscale provider configurations
 
 provider "exoscale" {
@@ -71,7 +91,35 @@ provider "exoscale" {
   secret = var.worker_1_exoscale_iam_secret_key
 }
 
+provider "exoscale" {
+  alias = "worker_2"
+
+  key    = var.worker_2_exoscale_iam_access_key
+  secret = var.worker_2_exoscale_iam_secret_key
+}
+
+### Argo CD provider configuration
+
+# No need to set an alias for the Argo CD provider, because there is only:
+# One Argo CD to rule them all,
+# One Argo CD to find them,
+# One Argo CD to bring them all,
+# and in the darkness bind them.
+provider "argocd" {
+  auth_token                  = module.control_plane.argocd_auth_token
+  port_forward_with_namespace = module.control_plane.argocd_namespace
+  insecure                    = true
+  plain_text                  = true
+
+  kubernetes {
+    host                   = module.control_plane.kubernetes_host
+    cluster_ca_certificate = module.control_plane.kubernetes_cluster_ca_certificate
+    token                  = module.control_plane.kubernetes_token
+  }
+}
+
 ### Kubernetes provider configurations
+
 provider "kubernetes" {
   alias = "control_plane"
 
@@ -87,6 +135,15 @@ provider "kubernetes" {
   client_certificate     = module.worker_1.kubernetes_client_certificate
   client_key             = module.worker_1.kubernetes_client_key
   cluster_ca_certificate = module.worker_1.kubernetes_cluster_ca_certificate
+}
+
+provider "kubernetes" {
+  alias = "worker_2"
+
+  host                   = module.worker_2.kubernetes_host
+  client_certificate     = module.worker_2.kubernetes_client_certificate
+  client_key             = module.worker_2.kubernetes_client_key
+  cluster_ca_certificate = module.worker_2.kubernetes_cluster_ca_certificate
 }
 
 ### Helm provider configurations
@@ -112,22 +169,13 @@ provider "helm" {
   }
 }
 
-### Argo CD provider configuration
-
-# No need to set an alias for the Argo CD provider, because there is only:
-# One Argo CD to rule them all,
-# One Argo CD to find them,
-# One Argo CD to bring them all,
-# and in the darkness bind them.
-provider "argocd" {
-  auth_token                  = module.control_plane.argocd_auth_token
-  port_forward_with_namespace = module.control_plane.argocd_namespace
-  insecure                    = true
-  plain_text                  = true
+provider "helm" {
+  alias = "worker_2"
 
   kubernetes {
-    host                   = module.control_plane.kubernetes_host
-    cluster_ca_certificate = module.control_plane.kubernetes_cluster_ca_certificate
-    token                  = module.control_plane.kubernetes_token
+    host                   = module.worker_2.kubernetes_host
+    client_certificate     = module.worker_2.kubernetes_client_certificate
+    client_key             = module.worker_2.kubernetes_client_key
+    cluster_ca_certificate = module.worker_2.kubernetes_cluster_ca_certificate
   }
 }

@@ -26,7 +26,9 @@ locals {
     ]
   ])
 
-  callback_urls = concat(local.control_plane_callback_urls, local.worker_callback_urls)
+  # The distinct() here is only to ensure there are no repeated URLs, although there is little risk of that happening 
+  # since we hardcode the URLs above. 
+  callback_urls = distinct(concat(local.control_plane_callback_urls, local.worker_callback_urls))
 
   oidc_config = {
     issuer_url              = format("https://cognito-idp.%s.amazonaws.com/%s", data.aws_region.cognito_pool_region.name, resource.aws_cognito_user_pool.devops_stack_user_pool.id)
