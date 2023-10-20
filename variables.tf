@@ -33,3 +33,23 @@ variable "worker_2_exoscale_iam_secret_key" {
   type        = string
   sensitive   = true
 }
+
+variable "worker_3_kubernetes_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "worker_3_kubernetes_client_certificate" {
+  type      = string
+  sensitive = true
+}
+
+variable "worker_3_kubernetes_client_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "worker_3_kubernetes_cluster_ca_certificate" {
+  type      = string
+  sensitive = true
+}

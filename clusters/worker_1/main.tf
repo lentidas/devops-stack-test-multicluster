@@ -18,31 +18,9 @@ module "sks" {
   }
 }
 
-# TODO Right now the Argo CD is using the administrator cluster role. Consider creating a dedicated role for Argo CD.
-resource "argocd_cluster" "this" {
-  name   = var.cluster_name
-  server = module.sks.kubernetes_host
-
-  config {
-    tls_client_config {
-      ca_data   = module.sks.kubernetes_cluster_ca_certificate
-      cert_data = module.sks.kubernetes_client_certificate
-      key_data  = module.sks.kubernetes_client_key
-      insecure  = false # This is the default value, but it is set here explicitly for clarity.
-    }
-  }
-  metadata {
-    labels = {
-      "cluster-type" = "worker",
-      "cloud"        = "exoscale",
-      "region"       = var.zone,
-    }
-  }
-}
-
 module "traefik" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-traefik.git//sks?ref=v2.0.1"
-  source = "../../../../devops-stack-module-traefik/sks"
+  source = "git::https://github.com/camptocamp/devops-stack-module-traefik.git//sks?ref=v3.1.0"
+  # source = "../../../../devops-stack-module-traefik/sks"
 
   cluster_name        = var.cluster_name
   base_domain         = module.sks.base_domain
@@ -61,8 +39,8 @@ module "traefik" {
 }
 
 module "cert-manager" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-cert-manager.git//sks?ref=v5.1.0"
-  source = "../../../../devops-stack-module-cert-manager/sks"
+  source = "git::https://github.com/camptocamp/devops-stack-module-cert-manager.git//sks?ref=v5.3.0"
+  # source = "../../../../devops-stack-module-cert-manager/sks"
 
   argocd_namespace    = var.argocd_namespace
   argocd_project      = var.argocd_project
@@ -75,8 +53,8 @@ module "cert-manager" {
 }
 
 module "longhorn" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-longhorn.git?ref=v2.1.1"
-  source = "../../../../devops-stack-module-longhorn"
+  source = "git::https://github.com/camptocamp/devops-stack-module-longhorn.git?ref=v2.3.0"
+  # source = "../../../../devops-stack-module-longhorn"
 
   cluster_name        = var.cluster_name
   base_domain         = module.sks.base_domain
@@ -107,8 +85,8 @@ module "longhorn" {
 }
 
 module "loki-stack" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-loki-stack.git//sks?ref=v4.0.2"
-  source = "../../../../devops-stack-module-loki-stack/sks"
+  source = "git::https://github.com/camptocamp/devops-stack-module-loki-stack.git//sks?ref=v5.1.0"
+  # source = "../../../../devops-stack-module-loki-stack/sks"
 
   cluster_id          = module.sks.cluster_id
   argocd_namespace    = var.argocd_namespace
@@ -130,8 +108,8 @@ module "loki-stack" {
 }
 
 module "kube-prometheus-stack" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-kube-prometheus-stack.git//sks?ref=v6.1.1"
-  source = "../../../../devops-stack-module-kube-prometheus-stack/sks"
+  source = "git::https://github.com/camptocamp/devops-stack-module-kube-prometheus-stack.git//sks?ref=v7.1.0"
+  # source = "../../../../devops-stack-module-kube-prometheus-stack/sks"
 
   cluster_name        = var.cluster_name
   base_domain         = module.sks.base_domain

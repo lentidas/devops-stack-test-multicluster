@@ -1,23 +1,19 @@
 module "helloworld_apps" {
-  source = "git::https://github.com/camptocamp/devops-stack-module-applicationset.git?ref=v2.1.1"
-  # source = "../../devops-stack-module-applicationset"
+  # source = "git::https://github.com/camptocamp/devops-stack-module-applicationset.git?ref=v2.0.1"
+  source = "../../../../devops-stack-module-applicationset"
 
-  providers = {
-    argocd = argocd.control_plane_1
+  dependency_ids = {
+    "traefik"               = module.traefik.id
+    "cert-manager"          = module.cert-manager.id
+    "loki-stack"            = module.loki-stack.id
+    "kube-prometheus-stack" = module.kube-prometheus-stack.id
   }
-
-  depends_on = [module.worker_1]
 
   name                      = "helloworld-apps"
-  argocd_namespace          = module.control_plane.argocd_namespace
-  project_dest_cluster_name = local.clusters.workers.worker_1.cluster_name
+  argocd_namespace          = var.argocd_namespace
+  project_dest_cluster_name = local.argocd_cluster_name
+  project_dest_namespace    = "*"
   project_source_repo       = "https://github.com/camptocamp/devops-stack-helloworld-templates.git"
-
-  app_autosync = {
-    allow_empty = false
-    prune       = true
-    self_heal   = true
-  }
 
   generators = [
     {
@@ -52,20 +48,21 @@ module "helloworld_apps" {
           # These are needed to generate the ingresses containing the name and base domain of the cluster.
           values = <<-EOT
             cluster:
-              name: "${local.clusters.workers.worker_1.cluster_name}"
-              domain: "${local.clusters.workers.worker_1.base_domain}"
-              issuer: "${local.clusters.workers.worker_1.cluster_issuer}"
+              name: "${var.cluster_name}"
+              domain: "${var.base_domain}"
+              issuer: "${var.cluster_issuer}"
             apps:
-              longhorn: true
+              traefik_dashboard: false
               grafana: true
               prometheus: true
               thanos: true
+              alertmanager: true
           EOT
         }
       }
 
       destination = {
-        name      = local.clusters.workers.worker_1.cluster_name
+        name      = local.argocd_cluster_name
         namespace = "{{path.basename}}"
       }
 

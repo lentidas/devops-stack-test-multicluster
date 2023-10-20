@@ -15,6 +15,10 @@ terraform {
       source  = "exoscale/exoscale"
       version = "~> 0.51"
     }
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3"
+    }
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "~> 2"
@@ -98,6 +102,17 @@ provider "exoscale" {
   secret = var.worker_2_exoscale_iam_secret_key
 }
 
+### Azure provider configurations
+
+provider "azurerm" {
+  alias = "worker_3"
+
+  features {}
+
+  tenant_id       = "fc621a41-14f1-4ca5-831e-15c0a062ec75"
+  subscription_id = "f8d4a723-c049-4de2-9a1d-deb775365d57"
+}
+
 ### Argo CD provider configuration
 
 # No need to set an alias for the Argo CD provider, because there is only:
@@ -106,6 +121,8 @@ provider "exoscale" {
 # One Argo CD to bring them all,
 # and in the darkness bind them.
 provider "argocd" {
+  alias = "control_plane_1"
+
   auth_token                  = module.control_plane.argocd_auth_token
   port_forward_with_namespace = module.control_plane.argocd_namespace
   insecure                    = true
@@ -118,6 +135,21 @@ provider "argocd" {
   }
 }
 
+provider "argocd" {
+  alias = "control_plane_2"
+
+  auth_token                  = module.control_plane_2.argocd_auth_token
+  port_forward_with_namespace = module.control_plane_2.argocd_namespace
+  insecure                    = true
+  plain_text                  = true
+
+  kubernetes {
+    host                   = module.control_plane_2.kubernetes_host
+    cluster_ca_certificate = module.control_plane_2.kubernetes_cluster_ca_certificate
+    token                  = module.control_plane_2.kubernetes_token
+  }
+}
+
 ### Kubernetes provider configurations
 
 provider "kubernetes" {
@@ -126,6 +158,14 @@ provider "kubernetes" {
   host                   = module.control_plane.kubernetes_host
   cluster_ca_certificate = module.control_plane.kubernetes_cluster_ca_certificate
   token                  = module.control_plane.kubernetes_token
+}
+
+provider "kubernetes" {
+  alias = "control_plane_2"
+
+  host                   = module.control_plane_2.kubernetes_host
+  cluster_ca_certificate = module.control_plane_2.kubernetes_cluster_ca_certificate
+  token                  = module.control_plane_2.kubernetes_token
 }
 
 provider "kubernetes" {
@@ -146,6 +186,17 @@ provider "kubernetes" {
   cluster_ca_certificate = module.worker_2.kubernetes_cluster_ca_certificate
 }
 
+provider "kubernetes" {
+  alias = "worker_3"
+
+  host                   = local.clusters.workers.worker_3.kubernetes_host
+  username               = local.clusters.workers.worker_3.kubernetes_username
+  password               = local.clusters.workers.worker_3.kubernetes_password
+  client_certificate     = local.clusters.workers.worker_3.kubernetes_client_certificate
+  client_key             = local.clusters.workers.worker_3.kubernetes_client_key
+  cluster_ca_certificate = local.clusters.workers.worker_3.kubernetes_cluster_ca_certificate
+}
+
 ### Helm provider configurations
 
 provider "helm" {
@@ -155,6 +206,16 @@ provider "helm" {
     host                   = module.control_plane.kubernetes_host
     cluster_ca_certificate = module.control_plane.kubernetes_cluster_ca_certificate
     token                  = module.control_plane.kubernetes_token
+  }
+}
+
+provider "helm" {
+  alias = "control_plane_2"
+
+  kubernetes {
+    host                   = module.control_plane_2.kubernetes_host
+    cluster_ca_certificate = module.control_plane_2.kubernetes_cluster_ca_certificate
+    token                  = module.control_plane_2.kubernetes_token
   }
 }
 
@@ -177,5 +238,18 @@ provider "helm" {
     client_certificate     = module.worker_2.kubernetes_client_certificate
     client_key             = module.worker_2.kubernetes_client_key
     cluster_ca_certificate = module.worker_2.kubernetes_cluster_ca_certificate
+  }
+}
+
+provider "helm" {
+  alias = "worker_3"
+
+  kubernetes {
+    host                   = local.clusters.workers.worker_3.kubernetes_host
+    username               = local.clusters.workers.worker_3.kubernetes_username
+    password               = local.clusters.workers.worker_3.kubernetes_password
+    client_certificate     = local.clusters.workers.worker_3.kubernetes_client_certificate
+    client_key             = local.clusters.workers.worker_3.kubernetes_client_key
+    cluster_ca_certificate = local.clusters.workers.worker_3.kubernetes_cluster_ca_certificate
   }
 }

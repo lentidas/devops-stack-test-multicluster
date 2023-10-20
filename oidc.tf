@@ -5,17 +5,37 @@ locals {
       email      = "goncalo.heleno@camptocamp.com"
       first_name = "Gonçalo"
       last_name  = "Heleno"
-    }
+    },
+    # jbarascut = {
+    #   username   = "jbarascut"
+    #   email      = "jeremy.barascut@camptocamp.com"
+    #   first_name = "Jérémy"
+    #   last_name  = "Barascut"
+    # },
+    # fsismondi = {
+    #   username   = "fsismondi"
+    #   email      = "federico.sismondi@camptocamp.com"
+    #   first_name = "Federico"
+    #   last_name  = "Sismondi"
+    # }
   }
 
-  control_plane_callback_urls = [
+  control_plane_callback_urls = concat([
     format("https://argocd.apps.%s.%s/auth/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
     format("https://grafana.apps.%s.%s/login/generic_oauth", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
     format("https://prometheus.apps.%s.%s/oauth2/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
     format("https://thanos-query.apps.%s.%s/oauth2/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
     format("https://thanos-bucketweb.apps.%s.%s/oauth2/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
     format("https://alertmanager.apps.%s.%s/oauth2/callback", local.clusters.control_plane.cluster_name, local.clusters.control_plane.base_domain),
-  ]
+    ], [
+    format("https://argocd.apps.%s.%s/auth/callback", local.clusters.control_plane_2.cluster_name, local.clusters.control_plane_2.base_domain),
+    format("https://grafana.apps.%s.%s/login/generic_oauth", local.clusters.control_plane_2.cluster_name, local.clusters.control_plane_2.base_domain),
+    format("https://prometheus.apps.%s.%s/oauth2/callback", local.clusters.control_plane_2.cluster_name, local.clusters.control_plane_2.base_domain),
+    format("https://thanos-query.apps.%s.%s/oauth2/callback", local.clusters.control_plane_2.cluster_name, local.clusters.control_plane_2.base_domain),
+    format("https://thanos-bucketweb.apps.%s.%s/oauth2/callback", local.clusters.control_plane_2.cluster_name, local.clusters.control_plane_2.base_domain),
+    format("https://alertmanager.apps.%s.%s/oauth2/callback", local.clusters.control_plane_2.cluster_name, local.clusters.control_plane_2.base_domain),
+
+  ])
 
   # TODO Maybe add Thanos callback URLs here?
   worker_callback_urls = flatten([for item in local.clusters.workers : [

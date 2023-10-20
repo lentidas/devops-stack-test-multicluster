@@ -42,22 +42,36 @@ locals {
       allowed_source_repos = local.project_allowed_source_repos
       allowed_namespaces   = local.project_allowed_namespaces
     }
+    "worker-3" = {
+      destination_cluster  = "gh-worker-3"
+      allowed_source_repos = local.project_allowed_source_repos
+      allowed_namespaces   = local.project_allowed_namespaces
+    }
   }
 
   # TODO Consider chosing better names than control_plane and workers
   clusters = {
     control_plane = {
-      kubernetes_version     = "1.27"
-      cluster_name           = "gh-control-plane"
+      kubernetes_version     = "1.28"
+      cluster_name           = "gh-control-1"
       base_domain            = "is-sandbox.camptocamp.com"
       cluster_issuer         = "letsencrypt-staging"
       enable_service_monitor = false # Can be enabled after the first bootstrap.
       enable_app_autosync    = true
       vpc_cidr               = "10.56.0.0/16"
     }
+    control_plane_2 = {
+      kubernetes_version     = "1.28"
+      cluster_name           = "gh-control-2"
+      base_domain            = "is-sandbox.camptocamp.com"
+      cluster_issuer         = "letsencrypt-staging"
+      enable_service_monitor = false # Can be enabled after the first bootstrap.
+      enable_app_autosync    = true
+      vpc_cidr               = "10.65.0.0/16"
+    }
     workers = {
       worker_1 = {
-        kubernetes_version       = "1.28.1"
+        kubernetes_version       = "1.28.2"
         cluster_name             = "gh-worker-1"
         zone                     = "ch-gva-2"
         service_level            = "starter"
@@ -68,7 +82,7 @@ locals {
         enable_app_autosync      = true
       }
       worker_2 = {
-        kubernetes_version       = "1.28.1"
+        kubernetes_version       = "1.28.2"
         cluster_name             = "gh-worker-2"
         zone                     = "ch-dk-2"
         service_level            = "starter"
@@ -77,6 +91,19 @@ locals {
         cluster_issuer           = "letsencrypt-staging"
         enable_service_monitor   = false # Can be enabled after the first bootstrap.
         enable_app_autosync      = true
+      }
+      worker_3 = {
+        cluster_name                      = "blue"
+        base_domain                       = "shelter-fr-dev.camptocamp.com"
+        kubernetes_host                   = "https://blue-cwt34i7w.hcp.francecentral.azmk8s.io:443"
+        kubernetes_username               = "clusterAdmin_blue-rg_blue"
+        kubernetes_password               = var.worker_3_kubernetes_password
+        kubernetes_client_certificate     = base64decode(var.worker_3_kubernetes_client_certificate)
+        kubernetes_client_key             = base64decode(var.worker_3_kubernetes_client_key)
+        kubernetes_cluster_ca_certificate = base64decode(var.worker_3_kubernetes_cluster_ca_certificate)
+        cluster_issuer                    = "letsencrypt-staging"
+        enable_service_monitor            = false # Can be enabled after the first bootstrap.
+        enable_app_autosync               = true
       }
     }
   }
@@ -89,7 +116,7 @@ module "control_plane" {
     aws        = aws.control_plane
     kubernetes = kubernetes.control_plane
     helm       = helm.control_plane
-    argocd     = argocd
+    argocd     = argocd.control_plane_1
   }
 
   kubernetes_version     = local.clusters.control_plane.kubernetes_version
@@ -104,6 +131,28 @@ module "control_plane" {
   oidc                   = local.oidc_config
 }
 
+module "control_plane_2" {
+  source = "./clusters/control_plane"
+
+  providers = {
+    aws        = aws.control_plane
+    kubernetes = kubernetes.control_plane_2
+    helm       = helm.control_plane_2
+    argocd     = argocd.control_plane_2
+  }
+
+  kubernetes_version     = local.clusters.control_plane_2.kubernetes_version
+  cluster_name           = local.clusters.control_plane_2.cluster_name
+  base_domain            = local.clusters.control_plane_2.base_domain
+  cluster_issuer         = local.clusters.control_plane_2.cluster_issuer
+  enable_service_monitor = local.clusters.control_plane_2.enable_service_monitor
+  enable_app_autosync    = local.clusters.control_plane_2.enable_app_autosync
+  vpc_cidr               = local.clusters.control_plane_2.vpc_cidr
+  argocd_project         = keys(local.argocd_projects)[0]
+  argocd_projects        = local.argocd_projects
+  oidc                   = local.oidc_config
+}
+
 module "worker_1" {
   source = "./clusters/worker_1"
 
@@ -112,7 +161,7 @@ module "worker_1" {
     exoscale   = exoscale.worker_1
     kubernetes = kubernetes.worker_1
     helm       = helm.worker_1
-    argocd     = argocd
+    argocd     = argocd.control_plane_1
   }
 
   kubernetes_version       = local.clusters.workers.worker_1.kubernetes_version
@@ -139,7 +188,7 @@ module "worker_2" {
     exoscale   = exoscale.worker_2
     kubernetes = kubernetes.worker_2
     helm       = helm.worker_2
-    argocd     = argocd
+    argocd     = argocd.control_plane_1
   }
 
   kubernetes_version       = local.clusters.workers.worker_2.kubernetes_version
@@ -157,3 +206,29 @@ module "worker_2" {
 
   depends_on = [module.control_plane]
 }
+
+# module "worker_3" {
+#   source = "./clusters/worker_3"
+
+#   providers = {
+#     azurerm    = azurerm.worker_3
+#     kubernetes = kubernetes.worker_3
+#     helm       = helm.worker_3
+#     argocd     = argocd
+#   }
+
+#   cluster_name                      = local.clusters.workers.worker_3.cluster_name
+#   base_domain                       = local.clusters.workers.worker_3.base_domain
+#   kubernetes_host                   = local.clusters.workers.worker_3.kubernetes_host
+#   kubernetes_username               = local.clusters.workers.worker_3.kubernetes_username
+#   kubernetes_password               = local.clusters.workers.worker_3.kubernetes_password
+#   kubernetes_client_certificate     = local.clusters.workers.worker_3.kubernetes_client_certificate
+#   kubernetes_client_key             = local.clusters.workers.worker_3.kubernetes_client_key
+#   kubernetes_cluster_ca_certificate = local.clusters.workers.worker_3.kubernetes_cluster_ca_certificate
+#   cluster_issuer                    = local.clusters.workers.worker_3.cluster_issuer
+#   enable_service_monitor            = local.clusters.workers.worker_3.enable_service_monitor
+#   enable_app_autosync               = local.clusters.workers.worker_3.enable_app_autosync
+#   argocd_project                    = keys(local.argocd_projects)[3]
+#   argocd_namespace                  = module.control_plane.argocd_namespace
+#   oidc                              = local.oidc_config
+# }
