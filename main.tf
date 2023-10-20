@@ -47,7 +47,7 @@ locals {
   # TODO Consider chosing better names than control_plane and workers
   clusters = {
     control_plane = {
-      kubernetes_version     = "1.27"
+      kubernetes_version     = "1.28"
       cluster_name           = "gh-control-plane"
       base_domain            = "is-sandbox.camptocamp.com"
       cluster_issuer         = "letsencrypt-staging"
@@ -57,7 +57,7 @@ locals {
     }
     workers = {
       worker_1 = {
-        kubernetes_version       = "1.28.1"
+        kubernetes_version       = "1.28.2"
         cluster_name             = "gh-worker-1"
         zone                     = "ch-gva-2"
         service_level            = "starter"
@@ -68,7 +68,7 @@ locals {
         enable_app_autosync      = true
       }
       worker_2 = {
-        kubernetes_version       = "1.28.1"
+        kubernetes_version       = "1.28.2"
         cluster_name             = "gh-worker-2"
         zone                     = "ch-dk-2"
         service_level            = "starter"

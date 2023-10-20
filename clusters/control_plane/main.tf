@@ -68,10 +68,8 @@ module "argocd_bootstrap" {
 }
 
 module "metrics-server" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-metrics-server.git?ref=v1.0.0"
-  source = "git::https://github.com/camptocamp/devops-stack-module-metrics-server.git?ref=feat_first_implementation"
-
-  target_revision = "feat_first_implementation"
+  source = "git::https://github.com/camptocamp/devops-stack-module-metrics-server.git?ref=v1.0.0"
+  # source = "../../../../devops-stack-module-metrics-server"
 
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
   argocd_project   = var.argocd_project
@@ -84,8 +82,8 @@ module "metrics-server" {
 }
 
 module "traefik" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-traefik.git//eks?ref=v3.0.0"
-  source = "../../../../devops-stack-module-traefik/eks"
+  source = "git::https://github.com/camptocamp/devops-stack-module-traefik.git//eks?ref=v3.1.0"
+  # source = "../../../../devops-stack-module-traefik/eks"
 
   cluster_name     = var.cluster_name
   base_domain      = module.eks.base_domain
@@ -101,8 +99,8 @@ module "traefik" {
 }
 
 module "cert-manager" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-cert-manager.git//eks?ref=v5.2.0"
-  source = "../../../../devops-stack-module-cert-manager/eks"
+  source = "git::https://github.com/camptocamp/devops-stack-module-cert-manager.git//eks?ref=v5.3.0"
+  # source = "../../../../devops-stack-module-cert-manager/eks"
 
   cluster_name     = var.cluster_name
   base_domain      = module.eks.base_domain
@@ -120,8 +118,8 @@ module "cert-manager" {
 }
 
 module "loki-stack" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-loki-stack.git//eks?ref=v5.0.0"
-  source = "../../../../devops-stack-module-loki-stack/eks"
+  source = "git::https://github.com/camptocamp/devops-stack-module-loki-stack.git//eks?ref=v5.1.0"
+  # source = "../../../../devops-stack-module-loki-stack/eks"
 
   argocd_namespace = module.argocd_bootstrap.argocd_namespace
   argocd_project   = var.argocd_project
@@ -141,8 +139,8 @@ module "loki-stack" {
 }
 
 module "thanos" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-thanos.git//eks=v2.4.0"
-  source = "../../../../devops-stack-module-thanos/eks"
+  source = "git::https://github.com/camptocamp/devops-stack-module-thanos.git//eks?ref=v2.6.0"
+  # source = "../../../../devops-stack-module-thanos/eks"
 
   cluster_name     = var.cluster_name
   base_domain      = module.eks.base_domain
@@ -170,8 +168,8 @@ module "thanos" {
 }
 
 module "kube-prometheus-stack" {
-  # source = "git::https://github.com/camptocamp/devops-stack-module-kube-prometheus-stack.git//eks?ref=v7.0.0"
-  source = "../../../../devops-stack-module-kube-prometheus-stack/eks"
+  source = "git::https://github.com/camptocamp/devops-stack-module-kube-prometheus-stack.git//eks?ref=v7.1.0"
+  # source = "../../../../devops-stack-module-kube-prometheus-stack/eks"
 
   cluster_name     = var.cluster_name
   base_domain      = module.eks.base_domain

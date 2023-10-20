@@ -5,7 +5,13 @@ locals {
       email      = "goncalo.heleno@camptocamp.com"
       first_name = "Gonçalo"
       last_name  = "Heleno"
-    }
+    },
+    # jbarascut = {
+    #   username   = "jbarascut"
+    #   email      = "jeremy.barascut@camptocamp.com"
+    #   first_name = "Jérémy"
+    #   last_name  = "Barascut"
+    # },
   }
 
   control_plane_callback_urls = [
